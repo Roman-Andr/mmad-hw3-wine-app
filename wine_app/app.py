@@ -265,8 +265,9 @@ with tab_batch:
                     st.info('Не используются при предсказании: ' + ', '.join(f'`{column}`' for column in ignored))
                 proba_batch = model.predict_proba(X_batch)[:, 1]
                 result = batch.copy()
-                result['вероятность_хорошее'] = proba_batch.round(4)
-                result['решение'] = np.where(proba_batch >= threshold, 'в подборку', 'не брать')
+                # вероятность и решение — первыми столбцами, чтобы их было видно без прокрутки
+                result.insert(0, 'решение', np.where(proba_batch >= threshold, 'в подборку', 'не брать'))
+                result.insert(0, 'вероятность_хорошее', proba_batch.round(4))
                 n_selected = int((proba_batch >= threshold).sum())
                 st.write(f'Вин в файле: {len(result)}, рекомендовано в подборку: **{n_selected}**.')
                 st.dataframe(result, width='stretch')
@@ -290,10 +291,11 @@ with tab_coef:
                     ha='left' if value > 0 else 'right', va='center', fontsize=9, color='#333333')
     span = np.abs(coef).max() * 1.25
     ax.set_xlim(-span, span)
-    ax.set_xlabel('Коэффициент: изменение логарифма шансов «хорошего» вина при росте признака на 1 std')
+    ax.set_xlabel('Коэффициент: изменение логарифма шансов «хорошего» вина\nпри росте признака на 1 std')
     ax.set_title('Коэффициенты логистической регрессии после StandardScaler')
     ax.legend(handles=[Patch(color=COLOR_FOR, label='«за» хорошее вино (коэффициент > 0)'),
-                       Patch(color=COLOR_AGAINST, label='«против» (коэффициент < 0)')], loc='lower right')
+                       Patch(color=COLOR_AGAINST, label='«против» (коэффициент < 0)')],
+              loc='upper center', bbox_to_anchor=(0.5, -0.17), ncol=2, frameon=False)
     ax.grid(True, axis='x', alpha=0.3)
     fig.tight_layout()
     st.pyplot(fig)
